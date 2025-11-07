@@ -32,60 +32,89 @@ def main():
 
 
 def load_data(filename):
-    """
-    Load shopping data from a CSV file `filename` and convert into a list of
-    evidence lists and a list of labels. Return a tuple (evidence, labels).
+    evidence = []
+    labels = []
 
-    evidence should be a list of lists, where each list contains the
-    following values, in order:
-        - Administrative, an integer
-        - Administrative_Duration, a floating point number
-        - Informational, an integer
-        - Informational_Duration, a floating point number
-        - ProductRelated, an integer
-        - ProductRelated_Duration, a floating point number
-        - BounceRates, a floating point number
-        - ExitRates, a floating point number
-        - PageValues, a floating point number
-        - SpecialDay, a floating point number
-        - Month, an index from 0 (January) to 11 (December)
-        - OperatingSystems, an integer
-        - Browser, an integer
-        - Region, an integer
-        - TrafficType, an integer
-        - VisitorType, an integer 0 (not returning) or 1 (returning)
-        - Weekend, an integer 0 (if false) or 1 (if true)
+    # Месяцы
+    months = {
+        "Jan": 0, "January": 0,
+        "Feb": 1, "February": 1,
+        "Mar": 2, "March": 2,
+        "Apr": 3, "April": 3,
+        "May": 4,
+        "Jun": 5, "June": 5,
+        "Jul": 6, "July": 6,
+        "Aug": 7, "August": 7,
+        "Sep": 8, "September": 8,
+        "Oct": 9, "October": 9,
+        "Nov": 10, "November": 10,
+        "Dec": 11, "December": 11
+    }
 
-    labels should be the corresponding list of labels, where each label
-    is 1 if Revenue is true, and 0 otherwise.
-    """
-    raise NotImplementedError
+    # Индексы признаков по типам
+    int_cols   = [0, 2, 4, 11, 12, 13, 14]   # все, которые int (без Month, VisitorType, Weekend)
+    float_cols = [1, 3, 5, 6, 7, 8, 9]       # все float
+
+    with open(filename, "r") as f:
+        reader = csv.reader(f)
+        next(reader)  # пропустить заголовок
+
+        for row in reader:
+            X = row[0:17]
+            Y = row[17]
+
+            # int
+            for i in int_cols:
+                X[i] = int(X[i])
+
+            # float
+            for i in float_cols:
+                X[i] = float(X[i])
+
+            # Month → число
+            X[10] = months[X[10]]
+
+            # VisitorType
+            X[15] = 1 if X[15] == "Returning_Visitor" else 0
+
+            # Weekend
+            X[16] = 1 if X[16] == "TRUE" else 0
+
+            # Label
+            Y = 1 if Y == "TRUE" else 0
+
+            evidence.append(X)
+            labels.append(Y)
+
+    return evidence, labels
 
 
 def train_model(evidence, labels):
-    """
-    Given a list of evidence lists and a list of labels, return a
-    fitted k-nearest neighbor model (k=1) trained on the data.
-    """
-    raise NotImplementedError
+    model = KNeighborsClassifier(n_neighbors=10)
+    model.fit(evidence, labels)
+    return model
 
 
 def evaluate(labels, predictions):
-    """
-    Given a list of actual labels and a list of predicted labels,
-    return a tuple (sensitivity, specificity).
+    TP = 0  # true positives
+    TN = 0  # true negatives
+    P = 0  # all actual positives
+    N = 0  # all actual negatives
 
-    Assume each label is either a 1 (positive) or 0 (negative).
+    for true, pred in zip(labels, predictions):
+        if true == 1:
+            P += 1
+            if pred == 1:
+                TP += 1
+        else:  # true == 0
+            N += 1
+            if pred == 0:
+                TN += 1
 
-    `sensitivity` should be a floating-point value from 0 to 1
-    representing the "true positive rate": the proportion of
-    actual positive labels that were accurately identified.
+    sensitivity = TP / P
+    specificity = TN / N
 
-    `specificity` should be a floating-point value from 0 to 1
-    representing the "true negative rate": the proportion of
-    actual negative labels that were accurately identified.
-    """
-    raise NotImplementedError
+    return sensitivity, specificity
 
 
 if __name__ == "__main__":
