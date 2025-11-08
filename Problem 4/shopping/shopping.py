@@ -90,7 +90,7 @@ def load_data(filename):
 
 
 def train_model(evidence, labels):
-    model = KNeighborsClassifier(n_neighbors=1)
+    model = KNeighborsClassifier(n_neighbors=3)
     model.fit(evidence, labels)
     return model
 
